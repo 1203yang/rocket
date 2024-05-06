@@ -96,6 +96,8 @@ namespace rocket{
   }
 
   void Logger::pushLog(const std::string& msg) {
+    //ScopeMutex 是一个模板类，
+    //通过模板参数 Mutex 指定了具体的互斥锁类型，即 m_mutex 是一个互斥锁对象。
     ScopeMutex<Mutex> lock(m_mutex);
     m_buffer.push(msg);
     lock.unlock();
@@ -103,7 +105,7 @@ namespace rocket{
   void Logger::log(){
     // 更安全的做法是把buffer取出来
     ScopeMutex<Mutex> lock(m_mutex);
-    std::queue<std::string> tmp = m_buffer;
+    std::queue<std::string> tmp ;
     m_buffer.swap(tmp);
     // 取出buffer中内容之后解锁
     lock.unlock();

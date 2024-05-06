@@ -9,7 +9,9 @@
 
 namespace rocket {
 // 先缓存进程和线程的id；避免重复调用
+// 进程是公共的，所以可以使用全局变量
 static int g_pid = 0;
+// 线城是私有的，要加上local
 static thread_local int t_thread_id = 0;
 // 获取进程号
 pid_t getPid() {

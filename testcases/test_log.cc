@@ -13,7 +13,7 @@ void* fun(void*) {
 }
 
 int main(){
-   
+  // 设置一个配置，传入的是配置文件的路径 
   rocket::Config::SetGlobalConfig("../conf/rocket.xml");
   rocket::Logger::InitGlobalLogger();
 
