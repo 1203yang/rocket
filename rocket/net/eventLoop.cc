@@ -6,6 +6,7 @@
 #include "rocket/net/eventLoop.h"
 #include "rocket/common/util.h"
 #include "rocket/net/fd_event.h"
+#include "rocket/net/timer.h"
 
 
 #define ADD_TO_EPOLL() \
@@ -16,9 +17,10 @@
     } \
     epoll_event tmp = event->getEpollEvent(); \
     int rt = epoll_ctl(m_epoll_fd, op, event->getFd(), &tmp); \
-    if (rt == 0) { \
+    if (rt == -1) { \
       ERRORLOG("failed epoll_ctl when add fd, errno=%d, error=%s", errno, strerror(errno)); \
     } \
+    m_listen_fds.insert(event->getFd()); \
     DEBUGLOG("add event success, fd[%d]", event->getFd()) \
 
 #define DELETE_TO_EPOLL() \
@@ -34,8 +36,6 @@
     } \
     m_listen_fds.erase(event->getFd()); \
     DEBUGLOG("delete event success, fd[%d]", event->getFd()); \
-
-
 
 
 namespace rocket{
@@ -68,6 +68,7 @@ EventLoop::EventLoop(){
   }
 
   initWakeUpFdEevent();
+  initTimer();
 
   INFOLOG("succ create event loop in thread %d", m_thread_id);
   t_current_eventloop = this;
@@ -80,6 +81,20 @@ EventLoop::~EventLoop(){
     delete m_wakeup_fd_event;
     m_wakeup_fd_event = NULL;
   }
+  if (m_timer) {
+    delete m_timer;
+    m_timer = NULL;
+  }
+}
+// 初始化定时器
+void EventLoop::initTimer() {
+  m_timer = new Timer();
+  // 
+  addEpollEvent(m_timer);
+}
+// 
+void EventLoop::addTimerEvent(TimerEvent::s_ptr event) {
+  m_timer->addTimerEvent(event);
 }
 
 void EventLoop::initWakeUpFdEevent() {

@@ -6,7 +6,9 @@
 #include <functional>
 #include <queue>
 #include "rocket/common/mutex.h"
+#include "rocket/net/fd_event.h"
 #include "rocket/net/wakeup_fd_event.h"
+#include "rocket/net/timer.h"
 
 namespace rocket{
 
@@ -14,8 +16,9 @@ class EventLoop{
   private:
     // 由于线程是独有的，所以要记录线程号
     pid_t m_thread_id{0};
-    int m_epoll_fd {0};// epoll句柄
-    int m_wakeup_fd {0};
+    int m_epoll_fd {0};// 对应于epoll实例的文件描述符
+    int m_wakeup_fd {0};// 唤醒的fd
+    // 唤醒事件
     WakeUpFdEvent*  m_wakeup_fd_event {NULL};
     bool m_stop_flag {false};// stop标志
 
@@ -26,8 +29,12 @@ class EventLoop{
     // 加锁
     Mutex m_mutex;
 
+    Timer* m_timer {NULL};
+
     void dealWakeup();
     void initWakeUpFdEevent();
+    void initTimer();
+    
     
   public:
     EventLoop();
@@ -46,7 +53,8 @@ class EventLoop{
     bool isInLoopThread();
     // 第二个变量是否唤醒
     void addTask(std::function<void()> cb, bool is_wake_up = false);
-
+    void addTimerEvent(TimerEvent::s_ptr event);
+    bool isLooping();
 
 };
 
