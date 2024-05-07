@@ -8,6 +8,7 @@
 namespace rocket {
 class FdEvent {
  public:
+ // 定义触发事件的类型
   enum TriggerEvent {
     IN_EVENT = EPOLLIN,
     OUT_EVENT = EPOLLOUT,
@@ -19,8 +20,6 @@ class FdEvent {
   FdEvent();
 
   ~FdEvent();
-
-
 
   std::function<void()> handler(TriggerEvent event_type);
   void listen(TriggerEvent event_type, std::function<void()> callback, std::function<void()> error_callback = nullptr);
@@ -35,7 +34,7 @@ class FdEvent {
 
  protected:
   int m_fd {-1};
-  //监听事件
+  //监听事件结构体信息
   epoll_event m_listen_events;
 
   std::function<void()> m_read_callback {nullptr};

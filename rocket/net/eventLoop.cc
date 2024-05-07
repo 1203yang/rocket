@@ -9,6 +9,10 @@
 #include "rocket/net/timer.h"
 
 
+// 在监听fd集合中找是否存在当前事件的Fd
+// 存在就更改监听状态
+// 不存在就先获得这个事件的信息结构体，
+// 然后添加事件到监听集合中，并且添加到我们的属性中
 #define ADD_TO_EPOLL() \
     auto it = m_listen_fds.find(event->getFd()); \
     int op = EPOLL_CTL_ADD; \
@@ -48,12 +52,15 @@ static thread_local EventLoop* t_current_eventloop = NULL;
 static int g_epoll_max_timeout = 10000;//定时器10s
 static int g_epoll_max_events = 10;
 
+// 在线程中创建一个循环，这个循环是一个epoll实例，
+// 初始化定时器和唤醒事件
 EventLoop::EventLoop(){
   if (t_current_eventloop != NULL) {
     ERRORLOG("failed to create event loop, this thread has created event loop");
     exit(0);
   }
   m_thread_id = getThreadId();
+  // 创建了一个 epoll 实例，并指定了它能监听的最多事件数为 10
   m_epoll_fd = epoll_create(10);
 
   // 返回-1是异常
@@ -75,7 +82,7 @@ EventLoop::EventLoop(){
   t_current_eventloop = this;
 }
 
-
+// 关闭epoll实例，释放定时器和唤醒事件
 EventLoop::~EventLoop(){
   close(m_epoll_fd);
   if (m_wakeup_fd_event) {
@@ -88,17 +95,23 @@ EventLoop::~EventLoop(){
   }
 }
 // 初始化定时器
+// 创建一个定时器，并且添加到监控的EpollEvent中
 void EventLoop::initTimer() {
   m_timer = new Timer();
   // 
   addEpollEvent(m_timer);
 }
-// 
+// 将定时任务添加到定时器中
 void EventLoop::addTimerEvent(TimerEvent::s_ptr event) {
   m_timer->addTimerEvent(event);
 }
 
+// 初始化唤醒事件
+// 创建一个文件描述符
+// 对应的创建该唤醒事件；并绑定回调函数
+// 回调函数就是读取缓冲区内容
 void EventLoop::initWakeUpFdEevent() {
+  // 创建一个文件描述符
   m_wakeup_fd = eventfd(0, EFD_NONBLOCK);
   if (m_wakeup_fd < 0) {
     ERRORLOG("failed to create event loop, eventfd create error, error info[%d]", errno);
@@ -120,6 +133,9 @@ void EventLoop::initWakeUpFdEevent() {
 
 
 // 重要的循环函数，因为服务器运行起来是不停止的
+// 队列中的任务取出执行
+// 然后调用epoll_wait等待事件发生，
+// 并添加到任务队列中
 void EventLoop::loop(){
     //服务器在运行的时候
   while(!m_stop_flag) {
@@ -142,8 +158,11 @@ void EventLoop::loop(){
     // 2. arrtive_time 如何让 eventloop 监听
 
     int timeout = g_epoll_max_timeout; 
+    // 存放事件信息的数组
     epoll_event result_events[g_epoll_max_events];
     //DEBUGLOG("now begin to epoll_wait");
+    // 在指定的 epoll 实例上等待事件的发生，一旦有事件发生或超时，
+    // 就将事件信息写入到 result_events 数组中，并返回发生的事件数量
     int rt = epoll_wait(m_epoll_fd, result_events, g_epoll_max_events, timeout);
     //DEBUGLOG("now end epoll_wait, rt = %d", rt);
     if (rt < 0) {
@@ -196,7 +215,8 @@ void EventLoop::stop(){
 void EventLoop::dealWakeup(){
 
 }
-
+// 将回调函数添加到任务队列中
+// 如果需要wakeup就唤醒
 void EventLoop::addTask(std::function<void()> cb, bool is_wake_up /*=false*/) {
   ScopeMutex<Mutex> lock(m_mutex);
   m_pending_tasks.push(cb);
@@ -218,8 +238,13 @@ void EventLoop::addEpollEvent(FdEvent* event) {
   }
 
 }
-
+// 属于当前线程的话就删除
+// 如果当前线程不在事件循环线程中，就先创建一个 Lambda 表达式作为一个任务，
+// 将删除操作放入其中。然后将这个任务添加到事件循环的任务队列中。
+// 这样做的目的是确保删除操作在事件循环线程中异步执行，保证了多线程环境下的安全性，
+// 同时不阻塞事件循环的执行。
 void EventLoop::deleteEpollEvent(FdEvent* event) {
+
   if (isInLoopThread()) {
     DELETE_TO_EPOLL();
   } else {
@@ -228,13 +253,13 @@ void EventLoop::deleteEpollEvent(FdEvent* event) {
     };
     addTask(cb, true);
   }
-
 }
 
 bool EventLoop::isInLoopThread() {
   return getThreadId() == m_thread_id;
 }
 
+// 返回当前循环的对象指针
 EventLoop* EventLoop::GetCurrentEventLoop() {
   if (t_current_eventloop) {
     return t_current_eventloop;

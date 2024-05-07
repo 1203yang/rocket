@@ -18,6 +18,7 @@ namespace rocket{
 
 // 定义一个模板函数 将格式化字符串和参数一起转换成字符串。
 // 函数接受一个格式化字符串str和一个可不变数量的参数args并返回格式化后的字符串
+// 按照 str 中指定的格式将可变参数进行格式化
 template<typename... Args>
 std::string formatString(const char* str, Args&&... args) {
   // 通过调用snprintf函数获取格式化后的字符串长度
@@ -31,7 +32,7 @@ std::string formatString(const char* str, Args&&... args) {
   }
   return result;
 }
-// 定义宏
+// 定义宏,调用的时候将代码复制到调用点
 #define DEBUGLOG(str, ...) \
   if(rocket::Logger::GetGlobalLogger()->getLogLevel()<=rocket::Debug)\
   {\
@@ -87,7 +88,7 @@ std::string formatString(const char* str, Args&&... args) {
         //void pushAppLog(const std::string& msg);
 
         //void init();
-
+        // 打印日志
         void log();
 
         LogLevel getLogLevel()const{

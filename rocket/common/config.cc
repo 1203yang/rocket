@@ -32,6 +32,7 @@ Config* Config::GetGlobalConfig() {
   return g_config;
 }
 // 设置配置
+// 如果没有配置过，并且xml文件非空就设置
 void Config::SetGlobalConfig(const char* xmlfile) {
   if (g_config == NULL) {
     if (xmlfile != NULL) {
@@ -41,7 +42,7 @@ void Config::SetGlobalConfig(const char* xmlfile) {
   }
 }
 
-
+// 构造函数中
 Config::Config(const char* xmlfile){
     TiXmlDocument* xml_document = new TiXmlDocument();
     // 从xml文件中加载配置文件

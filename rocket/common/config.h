@@ -9,7 +9,7 @@
  
  class Config{
    public:
-    // 构造函数
+    // 构造函数，传入的是xml文件地址
     Config(const char* xmlfile);
     //Config();
    // ~Config();

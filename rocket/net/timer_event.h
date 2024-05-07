@@ -9,8 +9,9 @@ namespace rocket {
 class TimerEvent {
 
  public:
+ // 指向定时任务事件的智能指针
   typedef std::shared_ptr<TimerEvent> s_ptr;
-
+  
   TimerEvent(int interval, bool is_repeated, std::function<void()> cb);
 
   int64_t getArriveTime() const {

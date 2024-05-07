@@ -23,8 +23,11 @@ namespace rocket{
     }
   
   }
+  // 从配置中读取日志级别，转换成LogLevel级别，
+  // 初始化全局的日志级别
   void Logger::InitGlobalLogger(){
     LogLevel global_log_level = StringToLogLevel(Config::GetGlobalConfig()->m_log_level);
+    // 获取字符串对象（如 std::string）中存储的 C 风格字符串（以 null 终止的字符数组）的方法
     printf("Init log level [%s]\n",LogLevelToString(global_log_level).c_str());
     g_logger = new Logger(global_log_level);
   }
@@ -58,7 +61,7 @@ namespace rocket{
 }
 
   // 打印日志
-  // 返回的是字符串
+  // 返回的是包含时间、进程线程号的字符串
   std::string LogEvent::toString(){
     struct timeval now_time;
     // 获取当前时间，包括秒数和微秒数，
@@ -94,14 +97,17 @@ namespace rocket{
     return ss.str();
 
   }
-
+  // 将信息推送到缓冲区
   void Logger::pushLog(const std::string& msg) {
     //ScopeMutex 是一个模板类，
     //通过模板参数 Mutex 指定了具体的互斥锁类型，即 m_mutex 是一个互斥锁对象。
+    //并在初始化 ScopeMutex<Mutex> 对象时将互斥锁对象传入，
+    // 然后在 ScopeMutex 的构造函数中将该互斥锁对象上锁。
     ScopeMutex<Mutex> lock(m_mutex);
     m_buffer.push(msg);
     lock.unlock();
   }
+  // 取出缓冲区的数据，并且打印
   void Logger::log(){
     // 更安全的做法是把buffer取出来
     ScopeMutex<Mutex> lock(m_mutex);

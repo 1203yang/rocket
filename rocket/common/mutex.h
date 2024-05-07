@@ -23,13 +23,13 @@ class ScopeMutex {
     m_mutex.unlock();
     m_is_lock = false;
   }
-
+  // 只有当没有锁住才能上锁
   void lock() {
     if (!m_is_lock) {
       m_mutex.lock();
     }
   }
-
+  // 只有锁住才能解锁
   void unlock() {
     if (m_is_lock) {
       m_mutex.unlock();
