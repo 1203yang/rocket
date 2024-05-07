@@ -60,6 +60,7 @@ class EventLoop{
     void addTask(std::function<void()> cb, bool is_wake_up = false);
     void addTimerEvent(TimerEvent::s_ptr event);
     bool isLooping();
+    // 获取当前线程的循环对象
     static EventLoop* GetCurrentEventLoop();
 
 };

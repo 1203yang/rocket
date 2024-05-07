@@ -49,6 +49,10 @@ TcpAcceptor::TcpAcceptor(NetAddr::s_ptr local_addr) : m_local_addr(local_addr) {
 TcpAcceptor::~TcpAcceptor() {
 }
 
+int TcpAcceptor::getListenFd() {
+  return m_listenfd;
+}
+
 
 int TcpAcceptor::accept(){
   if (m_family == AF_INET) {// ipv4协议
@@ -67,7 +71,7 @@ int TcpAcceptor::accept(){
   } else {
     // ...
     // 可以扩展其他协议
-    
+    return -1;
   }
 }
 

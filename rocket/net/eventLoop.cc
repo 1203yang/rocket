@@ -268,7 +268,4 @@ EventLoop* EventLoop::GetCurrentEventLoop() {
   return t_current_eventloop;
 }
 
-
-
-
 }
