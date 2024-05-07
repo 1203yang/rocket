@@ -10,9 +10,9 @@ TimerEvent::TimerEvent(int interval, bool is_repeated, std::function<void()> cb)
   resetArriveTime();
 }
 
-
+// 重设到达时间
 void TimerEvent::resetArriveTime() {
-
+  
   m_arrive_time = getNowMs() + m_interval;
   DEBUGLOG("success create timer event, will excute at [%lld]", m_arrive_time);
 }

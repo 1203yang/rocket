@@ -16,6 +16,7 @@
       op = EPOLL_CTL_MOD; \
     } \
     epoll_event tmp = event->getEpollEvent(); \
+    INFOLOG("epoll_event.events = %d", (int)tmp.events); \
     int rt = epoll_ctl(m_epoll_fd, op, event->getFd(), &tmp); \
     if (rt == -1) { \
       ERRORLOG("failed epoll_ctl when add fd, errno=%d, error=%s", errno, strerror(errno)); \
@@ -60,12 +61,12 @@ EventLoop::EventLoop(){
     ERRORLOG("failed to create event loop, epoll_create error, error info[%d]", errno);
     exit(0);
   }
-  // 设置非阻塞
-  m_wakeup_fd = eventfd(0,EFD_NONBLOCK);
-  if(m_wakeup_fd<0){
-    ERRORLOG("failed to create event loop, eventfd error, error info[%d]", errno);
-    exit(0);
-  }
+  // // 设置非阻塞
+  // m_wakeup_fd = eventfd(0,EFD_NONBLOCK);
+  // if(m_wakeup_fd<0){
+  //   ERRORLOG("failed to create event loop, eventfd error, error info[%d]", errno);
+  //   exit(0);
+  // }
 
   initWakeUpFdEevent();
   initTimer();
@@ -142,9 +143,9 @@ void EventLoop::loop(){
 
     int timeout = g_epoll_max_timeout; 
     epoll_event result_events[g_epoll_max_events];
-    DEBUGLOG("now begin to epoll_wait");
+    //DEBUGLOG("now begin to epoll_wait");
     int rt = epoll_wait(m_epoll_fd, result_events, g_epoll_max_events, timeout);
-    DEBUGLOG("now end epoll_wait, rt = %d", rt);
+    //DEBUGLOG("now end epoll_wait, rt = %d", rt);
     if (rt < 0) {
       ERRORLOG("epoll_wait error, errno=%d, error=%s", errno, strerror(errno));
     } else {
@@ -156,11 +157,11 @@ void EventLoop::loop(){
           continue;
         }
         if (trigger_event.events & EPOLLIN) { 
-          DEBUGLOG("fd %d trigger EPOLLIN event", fd_event->getFd())
+          //DEBUGLOG("fd %d trigger EPOLLIN event", fd_event->getFd())
           addTask(fd_event->handler(FdEvent::IN_EVENT));
         }
         if (trigger_event.events & EPOLLOUT) { 
-          DEBUGLOG("fd %d trigger EPOLLOUT event", fd_event->getFd())
+          //DEBUGLOG("fd %d trigger EPOLLOUT event", fd_event->getFd())
           addTask(fd_event->handler(FdEvent::OUT_EVENT));
         }
 
@@ -234,7 +235,13 @@ bool EventLoop::isInLoopThread() {
   return getThreadId() == m_thread_id;
 }
 
-
+EventLoop* EventLoop::GetCurrentEventLoop() {
+  if (t_current_eventloop) {
+    return t_current_eventloop;
+  }
+  t_current_eventloop = new EventLoop();
+  return t_current_eventloop;
+}
 
 
 
