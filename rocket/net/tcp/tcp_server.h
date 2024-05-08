@@ -3,7 +3,7 @@
 
 #include <set>
 #include "rocket/net/tcp/tcp_acceptor.h"
-// #include "rocket/net/tcp/tcp_connection.h"
+#include "rocket/net/tcp/tcp_Connection.h"
 #include "rocket/net/tcp/net_addr.h"
 #include "rocket/net/eventLoop.h"
 #include "rocket/net/io_thread_group.h"
@@ -43,8 +43,9 @@ class TcpServer {
   FdEvent* m_listen_fd_event;
   // 当前连接的数量
   int m_client_counts {0};
+  // 将连接保存下来
 
-//   std::set<TcpConnection::s_ptr> m_client;
+  std::set<TcpConnection::s_ptr> m_client;
 
 //   TimerEvent::s_ptr m_clear_client_timer_event;
 

@@ -14,9 +14,8 @@ class TcpAcceptor {
   TcpAcceptor(NetAddr::s_ptr local_addr);
 
   ~TcpAcceptor();
-
-  // std::pair<int, NetAddr::s_ptr> accept();
-  int accept();
+  // 返回事件的fd 和网络地址
+  std::pair<int, NetAddr::s_ptr> accept();
   int getListenFd();
 
  private:

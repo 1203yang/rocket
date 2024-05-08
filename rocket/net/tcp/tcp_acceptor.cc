@@ -53,8 +53,7 @@ int TcpAcceptor::getListenFd() {
   return m_listenfd;
 }
 
-
-int TcpAcceptor::accept(){
+std::pair<int, NetAddr::s_ptr> TcpAcceptor::accept() {
   if (m_family == AF_INET) {// ipv4协议
     sockaddr_in client_addr;
     memset(&client_addr, 0, sizeof(client_addr));
@@ -67,32 +66,13 @@ int TcpAcceptor::accept(){
     IPNetAddr::s_ptr peer_addr = std::make_shared<IPNetAddr>(client_addr);
     INFOLOG("A client have accpeted succ, peer addr [%s]", peer_addr->toString().c_str());
 
-    return client_fd;
+    return std::make_pair(client_fd, peer_addr);
   } else {
-    // ...
+    // ... 
     // 可以扩展其他协议
-    return -1;
+    return std::make_pair(-1, nullptr);
   }
-}
-
-// std::pair<int, NetAddr::s_ptr> TcpAcceptor::accept() {
-//   if (m_family == AF_INET) {
-//     sockaddr_in client_addr;
-//     memset(&client_addr, 0, sizeof(client_addr));
-//     socklen_t clien_addr_len = sizeof(clien_addr_len);
-
-//     int client_fd = ::accept(m_listenfd, reinterpret_cast<sockaddr*>(&client_addr), &clien_addr_len);
-//     if (client_fd < 0) {
-//       ERRORLOG("accept error, errno=%d, error=%s", errno, strerror(errno));
-//     }
-//     IPNetAddr::s_ptr peer_addr = std::make_shared<IPNetAddr>(client_addr);
-//     INFOLOG("A client have accpeted succ, peer addr [%s]", peer_addr->toString().c_str());
-
-//     return std::make_pair(client_fd, peer_addr);
-//   } else {
-//     // ...
-//     return std::make_pair(-1, nullptr);
-//   }
 
 }
 
+}

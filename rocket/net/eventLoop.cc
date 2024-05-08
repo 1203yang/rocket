@@ -137,6 +137,7 @@ void EventLoop::initWakeUpFdEevent() {
 // 然后调用epoll_wait等待事件发生，
 // 并添加到任务队列中
 void EventLoop::loop(){
+  m_is_looping = true;
     //服务器在运行的时候
   while(!m_stop_flag) {
     //仍然是加锁，然后取出，然后解锁
@@ -266,6 +267,10 @@ EventLoop* EventLoop::GetCurrentEventLoop() {
   }
   t_current_eventloop = new EventLoop();
   return t_current_eventloop;
+}
+
+bool EventLoop::isLooping() {
+  return m_is_looping;
 }
 
 }

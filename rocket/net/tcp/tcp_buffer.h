@@ -9,7 +9,7 @@ namespace rocket {
 class TcpBuffer {
 
  public:
-
+  // 建一个指针方便使用
   typedef std::shared_ptr<TcpBuffer> s_ptr;
 
   TcpBuffer(int size);
