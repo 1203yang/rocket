@@ -12,8 +12,8 @@
 #include "rocket/common/config.h"
 #include "rocket/net/tcp/tcp_client.h"
 #include "rocket/net/tcp/net_addr.h"
-// #include "rocket/net/coder/string_coder.h"
-// #include "rocket/net/coder/abstract_protocol.h"
+#include "rocket/net/string_coder.h"
+#include "rocket/net/abstract_protocol.h"
 // #include "rocket/net/coder/tinypb_coder.h"
 // #include "rocket/net/coder/tinypb_protocol.h"
 
@@ -24,7 +24,6 @@ void test_connect() {
   // 等待 read 返回结果
   // 建立一个套接字
   int fd = socket(AF_INET, SOCK_STREAM, 0);
-
   if (fd < 0) {
     ERRORLOG("invalid fd %d", fd);
     exit(0);
@@ -56,25 +55,54 @@ void test_tcp_client() {
 
   rocket::IPNetAddr::s_ptr addr = std::make_shared<rocket::IPNetAddr>("127.0.0.1", 12346);
   rocket::TcpClient client(addr);
-  client.connect([addr, &client]() {
-    DEBUGLOG("conenct to [%s] success", addr->toString().c_str());
-    });
+  // 仅仅是测试客户端连接的时候
+  // client.connect([addr, &client]() {
+  //   DEBUGLOG("conenct to [%s] success", addr->toString().c_str());
+  //   });
+  // 测试发送消息
+  // client.connect([addr, &client]() {
+  //   DEBUGLOG("conenct to [%s] success", addr->toString().c_str());
+  //   std::shared_ptr<rocket::StringProtocol> message = std::make_shared<rocket::StringProtocol>();
+  //   message->info = "hello rocket";
+  //   message->setReqId("123456" );
+  //   client.writeMessage(message, [](rocket::AbstractProtocol::s_ptr msg_ptr) {
+  //     DEBUGLOG("send message success");
+  //   });
 
+  // 测试发送和读取消息
+    client.connect([addr, &client]() {
+      DEBUGLOG("conenct to [%s] success", addr->toString().c_str());
+      std::shared_ptr<rocket::StringProtocol> message = std::make_shared<rocket::StringProtocol>();
+      message->info = "hello rocket";
+      message->setReqId("123456" );
+      client.writeMessage(message, [](rocket::AbstractProtocol::s_ptr msg_ptr) {
+        DEBUGLOG("send message success");
+      });
 
-//   client.connect([addr, &client]() {
-//     DEBUGLOG("conenct to [%s] success", addr->toString().c_str());
-//     std::shared_ptr<rocket::TinyPBProtocol> message = std::make_shared<rocket::TinyPBProtocol>();
-//     message->m_msg_id = "123456789";
-//     message->m_pb_data = "test pb data";
-//     client.writeMessage(message, [](rocket::AbstractProtocol::s_ptr msg_ptr) {
-//       DEBUGLOG("send message success");
-//     });
+      client.readMessage("123456789", [](rocket::AbstractProtocol::s_ptr msg_ptr) {
+        std::shared_ptr<rocket::StringProtocol> message = std::dynamic_pointer_cast<rocket::StringProtocol>(msg_ptr);
+        DEBUGLOG("msg_id[%s], get response %s", message->getReqId().c_str(), message->info.c_str());
+      });
 
-//     client.readMessage("123456789", [](rocket::AbstractProtocol::s_ptr msg_ptr) {
-//       std::shared_ptr<rocket::TinyPBProtocol> message = std::dynamic_pointer_cast<rocket::TinyPBProtocol>(msg_ptr);
-//       DEBUGLOG("msg_id[%s], get response %s", message->m_msg_id.c_str(), message->m_pb_data.c_str());
-//     });
-//   });
+      client.writeMessage(message, [](rocket::AbstractProtocol::s_ptr msg_ptr) {
+        DEBUGLOG("send message 2222 success");
+      });
+
+  });
+  // client.connect([addr, &client]() {
+  //   DEBUGLOG("conenct to [%s] success", addr->toString().c_str());
+  //   std::shared_ptr<rocket::TinyPBProtocol> message = std::make_shared<rocket::TinyPBProtocol>();
+  //   message->m_msg_id = "123456789";
+  //   message->m_pb_data = "test pb data";
+  //   client.writeMessage(message, [](rocket::AbstractProtocol::s_ptr msg_ptr) {
+  //     DEBUGLOG("send message success");
+  //   });
+
+  //   client.readMessage("123456789", [](rocket::AbstractProtocol::s_ptr msg_ptr) {
+  //     std::shared_ptr<rocket::TinyPBProtocol> message = std::dynamic_pointer_cast<rocket::TinyPBProtocol>(msg_ptr);
+  //     DEBUGLOG("msg_id[%s], get response %s", message->m_msg_id.c_str(), message->m_pb_data.c_str());
+  //   });
+  // });
 }
 
 int main() {
@@ -83,9 +111,9 @@ int main() {
 
   rocket::Logger::InitGlobalLogger();
  // 测试连接部分调用函数
- test_connect();
+  // test_connect();
 
-//   test_tcp_client();
+  test_tcp_client();
 
   return 0;
 }

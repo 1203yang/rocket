@@ -7,7 +7,7 @@
 #include "rocket/net/tcp/net_addr.h"
 #include "rocket/net/tcp/tcp_buffer.h"
 #include "rocket/net/io_thread.h"
-// #include "rocket/net/coder/abstract_coder.h"
+#include "rocket/net/abstract_coder.h"
 // #include "rocket/net/rpc/rpc_dispatcher.h"
 
 namespace rocket {
@@ -31,7 +31,7 @@ class TcpConnection {
 
 
  public:
-  TcpConnection(EventLoop* event_loop, int fd, int buffer_size, NetAddr::s_ptr peer_addr);
+  TcpConnection(EventLoop* event_loop, int fd, int buffer_size, NetAddr::s_ptr peer_addr,TcpConnectionType type = TcpConnectionByServer);
   TcpConnection(EventLoop* event_loop, int fd, int buffer_size, NetAddr::s_ptr peer_addr, NetAddr::s_ptr local_addr, TcpConnectionType type = TcpConnectionByServer);
   
   ~TcpConnection();
@@ -55,16 +55,16 @@ class TcpConnection {
   void shutdown();
 
   void setConnectionType(TcpConnectionType type);
+  // 把connection监听可写事件拿出来
+  // 启动监听可写事件
+  void listenWrite();
 
-  // // 启动监听可写事件
-  // void listenWrite();
+  // 启动监听可读事件
+  void listenRead();
 
-  // // 启动监听可读事件
-  // void listenRead();
+  void pushSendMessage(AbstractProtocol::s_ptr message, std::function<void(AbstractProtocol::s_ptr)> done);
 
-  // void pushSendMessage(AbstractProtocol::s_ptr message, std::function<void(AbstractProtocol::s_ptr)> done);
-
-  // void pushReadMessage(const std::string& msg_id, std::function<void(AbstractProtocol::s_ptr)> done);
+  void pushReadMessage(const std::string& msg_id, std::function<void(AbstractProtocol::s_ptr)> done);
 
   // NetAddr::s_ptr getLocalAddr();
 
@@ -85,20 +85,21 @@ class TcpConnection {
   // IOThread* m_io_thread {NULL};
   // tcpconnection本质上是一个socket，所以对应一个event对象
   FdEvent* m_fd_event {NULL};
-
-  // AbstractCoder* m_coder {NULL};
+  // 声明一个编程对象，要调用它的编码解码函数
+  AbstractCoder* m_coder {NULL};
 
   TcpState m_state; // 当前连接状态
 
   int m_fd {0};
 
   TcpConnectionType m_connection_type {TcpConnectionByServer};
-
+  // 用队列去存需要发送的信息
   // // std::pair<AbstractProtocol::s_ptr, std::function<void(AbstractProtocol::s_ptr)>>
-  // std::vector<std::pair<AbstractProtocol::s_ptr, std::function<void(AbstractProtocol::s_ptr)>>> m_write_dones;
+  std::vector<std::pair<AbstractProtocol::s_ptr, std::function<void(AbstractProtocol::s_ptr)>>> m_write_dones;
 
-  // // key 为 msg_id
-  // std::map<std::string, std::function<void(AbstractProtocol::s_ptr)>> m_read_dones;
+  // key 为 msg_id
+  // 定义集合存储读到的消息
+  std::map<std::string, std::function<void(AbstractProtocol::s_ptr)>> m_read_dones;
   
 };
 
