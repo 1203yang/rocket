@@ -11,7 +11,7 @@ pid_t getPid();
 pid_t getThreadId();
 
 int64_t getNowMs();
-
+// 从网络字节序读in32的数
 int32_t getInt32FromNetByte(const char* buf);
 
 }

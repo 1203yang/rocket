@@ -45,8 +45,8 @@ int64_t getNowMs() {
 
 int32_t getInt32FromNetByte(const char* buf) {
   int32_t re;
-  memcpy(&re, buf, sizeof(re));
-  return ntohl(re);
+  memcpy(&re, buf, sizeof(re));// 拷贝，调用系统方法
+  return ntohl(re);// 网络字节序到主机字节序
 }
 
 }
