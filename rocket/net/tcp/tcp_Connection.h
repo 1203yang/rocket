@@ -8,7 +8,7 @@
 #include "rocket/net/tcp/tcp_buffer.h"
 #include "rocket/net/io_thread.h"
 #include "rocket/net/coder/abstract_coder.h"
-// #include "rocket/net/rpc/rpc_dispatcher.h"
+#include "rocket/net/rpc/rpc_dispatcher.h"
 
 namespace rocket {
 // 枚举连接状态
@@ -31,7 +31,6 @@ class TcpConnection {
 
 
  public:
-  TcpConnection(EventLoop* event_loop, int fd, int buffer_size, NetAddr::s_ptr peer_addr,TcpConnectionType type = TcpConnectionByServer);
   TcpConnection(EventLoop* event_loop, int fd, int buffer_size, NetAddr::s_ptr peer_addr, NetAddr::s_ptr local_addr, TcpConnectionType type = TcpConnectionByServer);
   
   ~TcpConnection();
@@ -66,9 +65,9 @@ class TcpConnection {
 
   void pushReadMessage(const std::string& msg_id, std::function<void(AbstractProtocol::s_ptr)> done);
 
-  // NetAddr::s_ptr getLocalAddr();
+  NetAddr::s_ptr getLocalAddr();
 
-  // NetAddr::s_ptr getPeerAddr();
+  NetAddr::s_ptr getPeerAddr();
 
   // void reply(std::vector<AbstractProtocol::s_ptr>& replay_messages);
 
@@ -82,7 +81,7 @@ class TcpConnection {
   TcpBuffer::s_ptr m_in_buffer;   // 接收缓冲区
   TcpBuffer::s_ptr m_out_buffer;  // 发送缓冲区
   // // 表示当前连接属于哪个线程，方便操作对应的eventloop
-  // IOThread* m_io_thread {NULL};
+
   // tcpconnection本质上是一个socket，所以对应一个event对象
   FdEvent* m_fd_event {NULL};
   // 声明一个编程对象，要调用它的编码解码函数
@@ -94,13 +93,12 @@ class TcpConnection {
 
   TcpConnectionType m_connection_type {TcpConnectionByServer};
   // 用队列去存需要发送的信息
-  // // std::pair<AbstractProtocol::s_ptr, std::function<void(AbstractProtocol::s_ptr)>>
   std::vector<std::pair<AbstractProtocol::s_ptr, std::function<void(AbstractProtocol::s_ptr)>>> m_write_dones;
 
   // key 为 msg_id
   // 定义集合存储读到的消息
   std::map<std::string, std::function<void(AbstractProtocol::s_ptr)>> m_read_dones;
-  
+  std::shared_ptr<RpcDispatcher> m_dispatcher;
 };
 
 }

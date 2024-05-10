@@ -5,43 +5,28 @@
 #include "rocket/net/coder/abstract_protocol.h"
 #include "rocket/net/coder/string_coder.h"
 #include "rocket/net/coder/tinypb_Coder.h"
+#include "rocket/net/rpc/rpc_dispatcher.h"
 
 namespace rocket {
 
-TcpConnection::TcpConnection(EventLoop* event_loop, int fd, int buffer_size, NetAddr::s_ptr peer_addr, TcpConnectionType type /*= TcpConnectionByServer*/ )
-    : m_event_loop(event_loop),m_peer_addr(peer_addr), m_state(NotConnected), m_fd(fd),m_connection_type(type) {
-    
+TcpConnection::TcpConnection(EventLoop* event_loop, int fd, int buffer_size, NetAddr::s_ptr peer_addr, NetAddr::s_ptr local_addr, TcpConnectionType type /*= TcpConnectionByServer*/)
+    : m_event_loop(event_loop), m_local_addr(local_addr), m_peer_addr(peer_addr), m_state(NotConnected), m_fd(fd), m_connection_type(type) {
+  // 初始化缓冲区
   m_in_buffer = std::make_shared<TcpBuffer>(buffer_size);
   m_out_buffer = std::make_shared<TcpBuffer>(buffer_size);
-
+  // 获得event对象
   m_fd_event = FdEventGroup::GetFdEventGroup()->getFdEvent(fd);
-  m_fd_event->setNonBlock();
-  // m_coder = new StringCoder();
-  
-  m_coder = new TinyPBCoder();
+  m_fd_event->setNonBlock();// 设置非阻塞
 
+  m_coder = new TinyPBCoder();
+  // 绑定回调函数
   if (m_connection_type == TcpConnectionByServer) {
     listenRead();
+  // 只有作为服务端的时候需要
+   m_dispatcher = std::make_shared<RpcDispatcher>();
   }
 
 }
-
-// TcpConnection::TcpConnection(EventLoop* event_loop, int fd, int buffer_size, NetAddr::s_ptr peer_addr, NetAddr::s_ptr local_addr, TcpConnectionType type /*= TcpConnectionByServer*/)
-//     : m_event_loop(event_loop), m_local_addr(local_addr), m_peer_addr(peer_addr), m_state(NotConnected), m_fd(fd), m_connection_type(type) {
-//   // 初始化缓冲区
-//   m_in_buffer = std::make_shared<TcpBuffer>(buffer_size);
-//   m_out_buffer = std::make_shared<TcpBuffer>(buffer_size);
-//   // 获得event对象
-//   m_fd_event = FdEventGroup::GetFdEventGroup()->getFdEvent(fd);
-//   m_fd_event->setNonBlock();// 设置非阻塞
-
-//   m_coder = new TinyPBCoder();
-//   // 绑定回调函数
-//   if (m_connection_type == TcpConnectionByServer) {
-//     listenRead();
-//   }
-
-// }
 
 TcpConnection::~TcpConnection() {
   DEBUGLOG("~TcpConnection");
@@ -116,10 +101,13 @@ void TcpConnection::excute() {
       INFOLOG("success get request[%s] from client[%s]", result[i]->m_req_id.c_str(), m_peer_addr->toString().c_str());
 
       std::shared_ptr<TinyPBProtocol> message = std::make_shared<TinyPBProtocol>();
-      message->m_pb_data = "hello. this is rocket rpc test data";
-      message->m_req_id = result[i]->m_req_id;
+      // 测试时候随便设置，实际上需要通过分发器来得到
+      // message->m_pb_data = "hello. this is rocket rpc test data";
+      // message->m_req_id = result[i]->m_req_id;
+      m_dispatcher->dispatch(result[i],message,this);
       replay_messages.emplace_back(message);
       
+
       // RpcDispatcher::GetRpcDispatcher()->dispatch(result[i], message, this);
     }
     m_coder->encode(result, m_out_buffer);
@@ -276,13 +264,13 @@ void TcpConnection::pushReadMessage(const std::string& msg_id, std::function<voi
 }
 
 
-// NetAddr::s_ptr TcpConnection::getLocalAddr() {
-//   return m_local_addr;
-// }
+NetAddr::s_ptr TcpConnection::getLocalAddr() {
+  return m_local_addr;
+}
 
-// NetAddr::s_ptr TcpConnection::getPeerAddr() {
-//   return m_peer_addr;
-// }
+NetAddr::s_ptr TcpConnection::getPeerAddr() {
+  return m_peer_addr;
+}
 
 
 // int TcpConnection::getFd() {
