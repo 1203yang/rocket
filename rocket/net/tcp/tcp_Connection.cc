@@ -23,7 +23,6 @@ TcpConnection::TcpConnection(EventLoop* event_loop, int fd, int buffer_size, Net
   if (m_connection_type == TcpConnectionByServer) {
     listenRead();
   // 只有作为服务端的时候需要
-   m_dispatcher = std::make_shared<RpcDispatcher>();
   }
 
 }
@@ -104,7 +103,8 @@ void TcpConnection::excute() {
       // 测试时候随便设置，实际上需要通过分发器来得到
       // message->m_pb_data = "hello. this is rocket rpc test data";
       // message->m_req_id = result[i]->m_req_id;
-      m_dispatcher->dispatch(result[i],message,this);
+      
+      RpcDispatcher::GetRpcDispatcher()->dispatch(result[i],message,this);
       replay_messages.emplace_back(message);
       
 

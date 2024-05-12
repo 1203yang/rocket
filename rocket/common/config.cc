@@ -38,6 +38,9 @@ void Config::SetGlobalConfig(const char* xmlfile) {
     if (xmlfile != NULL) {
       g_config = new Config(xmlfile);
     } 
+    // else {
+    //   g_config = new Config();
+    // }
     
   }
 }
