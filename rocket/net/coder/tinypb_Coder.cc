@@ -86,8 +86,8 @@ void TinyPBCoder::decode(std::vector<AbstractProtocol::s_ptr>& out_messages, Tcp
       // 请求的id
       char msg_id[100] = {0};
       memcpy(&msg_id[0], &tmp[msg_id_index], message->m_msg_id_len);
-      message->m_req_id = std::string(msg_id);
-      DEBUGLOG("parse msg_id=%s", message->m_req_id.c_str());
+      message->m_msg_id = std::string(msg_id);
+      DEBUGLOG("parse msg_id=%s", message->m_msg_id.c_str());
       //方法名长度
       int method_name_len_index = msg_id_index + message->m_msg_id_len;
       if (method_name_len_index >= end_index) {
@@ -144,12 +144,12 @@ void TinyPBCoder::decode(std::vector<AbstractProtocol::s_ptr>& out_messages, Tcp
 
 // 将message转换成字节流，输入是meaasge和长度
 const char* TinyPBCoder::encodeTinyPB(std::shared_ptr<TinyPBProtocol> message, int& len) {
-  if (message->m_req_id.empty()) {
-    message->m_req_id = "123456789";
+  if (message->m_msg_id.empty()) {
+    message->m_msg_id = "123456789";
   }
-  DEBUGLOG("msg_id = %s", message->m_req_id.c_str());
+  DEBUGLOG("msg_id = %s", message->m_msg_id.c_str());
   // 总包的长度
-  int pk_len = 2 + 24 + message->m_req_id.length() + message->m_method_name.length() + message->m_err_info.length() + message->m_pb_data.length();
+  int pk_len = 2 + 24 + message->m_msg_id.length() + message->m_method_name.length() + message->m_err_info.length() + message->m_pb_data.length();
   DEBUGLOG("pk_len = %", pk_len);
   // 将malloc函数返回的void类型指针强制转换为char类型指针
   // 申请的内存空间
@@ -163,13 +163,13 @@ const char* TinyPBCoder::encodeTinyPB(std::shared_ptr<TinyPBProtocol> message, i
   memcpy(tmp, &pk_len_net, sizeof(pk_len_net));
   tmp += sizeof(pk_len_net);
   // id长度
-  int msg_id_len = message->m_req_id.length();
+  int msg_id_len = message->m_msg_id.length();
   int32_t msg_id_len_net = htonl(msg_id_len);
   memcpy(tmp, &msg_id_len_net, sizeof(msg_id_len_net));
   tmp += sizeof(msg_id_len_net);
   // id
-  if (!message->m_req_id.empty()) {
-    memcpy(tmp, &(message->m_req_id[0]), msg_id_len);
+  if (!message->m_msg_id.empty()) {
+    memcpy(tmp, &(message->m_msg_id[0]), msg_id_len);
     tmp += msg_id_len;
   }
   // 方法名长度
@@ -215,7 +215,7 @@ const char* TinyPBCoder::encodeTinyPB(std::shared_ptr<TinyPBProtocol> message, i
   message->parse_success = true;
   len = pk_len;
   
-  DEBUGLOG("encode message[%s] success", message->m_req_id.c_str());
+  DEBUGLOG("encode message[%s] success", message->m_msg_id.c_str());
 
   return buf;
 }

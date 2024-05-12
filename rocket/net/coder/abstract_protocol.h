@@ -10,13 +10,13 @@ struct AbstractProtocol :public std::enable_shared_from_this<AbstractProtocol>{
    typedef std::shared_ptr<AbstractProtocol> s_ptr;
    
    // 请求号，唯一的标识rpc请求或者响应
-   std::string m_req_id;
-  //  std::string getReqId(){
-  //   return m_req_id;
+   std::string m_msg_id;
+  //  std::string getMsgId(){
+  //   return m_msg_id;
   //  }
 
-  //  void setReqId(const std::string& req_id){
-  //   m_req_id = req_id;
+  //  void setMsgId(const std::string& msg_id){
+  //   m_msg_id = msg_id;
   //  }
 
    virtual ~AbstractProtocol(){}

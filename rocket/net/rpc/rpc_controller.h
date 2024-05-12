@@ -61,7 +61,7 @@ class RpcController : public google::protobuf::RpcController {
  private:
   int32_t m_error_code {0}; // 错误码
   std::string m_error_info; // 错误信息
-  std::string m_req_id;     // 请求id
+  std::string m_msg_id;     // 请求id
 
   bool m_is_failed {false}; //rpc是否调用失败
   bool m_is_cancled {false};// rpc是否被取消
