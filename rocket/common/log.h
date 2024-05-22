@@ -8,13 +8,10 @@
 
 #include "rocket/common/config.h"
 #include "rocket/common/mutex.h"
+#include "rocket/net/timer_event.h"
 
 
 namespace rocket{
-
-
-
-
 
 // 定义一个模板函数 将格式化字符串和参数一起转换成字符串。
 // 函数接受一个格式化字符串str和一个可不变数量的参数args并返回格式化后的字符串
@@ -34,107 +31,198 @@ std::string formatString(const char* str, Args&&... args) {
 }
 // 定义宏,调用的时候将代码复制到调用点
 #define DEBUGLOG(str, ...) \
-  if(rocket::Logger::GetGlobalLogger()->getLogLevel()<=rocket::Debug)\
-  {\
-    rocket::Logger::GetGlobalLogger()->pushLog((rocket::LogEvent(rocket::LogLevel::Debug)).toString()\
-     +  "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + "]\t" + rocket::formatString(str,##__VA_ARGS__) + "\n");\
-    rocket::Logger::GetGlobalLogger()->log();                                                                               \
-  }\
+  if (rocket::Logger::GetGlobalLogger()->getLogLevel() && rocket::Logger::GetGlobalLogger()->getLogLevel() <= rocket::Debug) \
+  { \
+    rocket::Logger::GetGlobalLogger()->pushLog(rocket::LogEvent(rocket::LogLevel::Debug).toString() \
+      + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + "]\t" + rocket::formatString(str, ##__VA_ARGS__) + "\n");\
+  } \
+
 
 #define INFOLOG(str, ...) \
-  if(rocket::Logger::GetGlobalLogger()->getLogLevel()<=rocket::Info)\
-  {\
-     rocket::Logger::GetGlobalLogger()->pushLog((rocket::LogEvent(rocket::LogLevel::Info)).toString()\
-     +  "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + "]\t" + rocket::formatString(str,##__VA_ARGS__) + "\n");\
-    rocket::Logger::GetGlobalLogger()->log();                                                                                \
-  }\
+  if (rocket::Logger::GetGlobalLogger()->getLogLevel() <= rocket::Info) \
+  { \
+    rocket::Logger::GetGlobalLogger()->pushLog(rocket::LogEvent(rocket::LogLevel::Info).toString() \
+    + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + "]\t" + rocket::formatString(str, ##__VA_ARGS__) + "\n");\
+  } \
 
 #define ERRORLOG(str, ...) \
-  if(rocket::Logger::GetGlobalLogger()->getLogLevel()<=rocket::Error)\
-  {\
-     rocket::Logger::GetGlobalLogger()->pushLog((rocket::LogEvent(rocket::LogLevel::Error)).toString()\
-     +  "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + "]\t" + rocket::formatString(str,##__VA_ARGS__) + "\n");\
-    rocket::Logger::GetGlobalLogger()->log();                                                                                \
-  }\
+  if (rocket::Logger::GetGlobalLogger()->getLogLevel() <= rocket::Error) \
+  { \
+    rocket::Logger::GetGlobalLogger()->pushLog(rocket::LogEvent(rocket::LogLevel::Error).toString() \
+      + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + "]\t" + rocket::formatString(str, ##__VA_ARGS__) + "\n");\
+  } \
+
+
+#define APPDEBUGLOG(str, ...) \
+  if (rocket::Logger::GetGlobalLogger()->getLogLevel() <= rocket::Debug) \
+  { \
+    rocket::Logger::GetGlobalLogger()->pushAppLog(rocket::LogEvent(rocket::LogLevel::Debug).toString() \
+      + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + "]\t" + rocket::formatString(str, ##__VA_ARGS__) + "\n");\
+  } \
+
+
+#define APPINFOLOG(str, ...) \
+  if (rocket::Logger::GetGlobalLogger()->getLogLevel() <= rocket::Info) \
+  { \
+    rocket::Logger::GetGlobalLogger()->pushAppLog(rocket::LogEvent(rocket::LogLevel::Info).toString() \
+    + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + "]\t" + rocket::formatString(str, ##__VA_ARGS__) + "\n");\
+  } \
+
+#define APPERRORLOG(str, ...) \
+  if (rocket::Logger::GetGlobalLogger()->getLogLevel() <= rocket::Error) \
+  { \
+    rocket::Logger::GetGlobalLogger()->pushAppLog(rocket::LogEvent(rocket::LogLevel::Error).toString() \
+      + "[" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + "]\t" + rocket::formatString(str, ##__VA_ARGS__) + "\n");\
+  } \
 
 
     // 日志级别的类
-    enum LogLevel{
-        Unkonwn = 0,
-        Debug = 1,
-        Info = 2,
-        Error = 3
-    };
+enum LogLevel{
+  Unkonwn = 0,
+  Debug = 1,
+  Info = 2,
+  Error = 3
+};
 
-    // 需要将LogLevel转换为字符串
-    std::string LogLevelToString(LogLevel level);
-    // 把字符串变成int
-    LogLevel StringToLogLevel(const std::string& log_level);
+// 需要将LogLevel转换为字符串
+std::string LogLevelToString(LogLevel level);
+// 把字符串变成int
+LogLevel StringToLogLevel(const std::string& log_level);
 
+// 异步日志
+class AsyncLogger {
+
+ public:
+  typedef std::shared_ptr<AsyncLogger> s_ptr;
+  AsyncLogger(const std::string& file_name, const std::string& file_path, int max_size);
+
+  void stop();
+
+  // 刷新到磁盘
+  void flush();
+
+  void pushLogBuffer(std::vector<std::string>& vec);
+
+
+ public:
+  static void* Loop(void*);
+
+ public:
+  pthread_t m_thread;
+
+ private:
+  // m_file_path/m_file_name_yyyymmdd.0
+
+  std::queue<std::vector<std::string>> m_buffer;
+
+  std::string m_file_name;    // 日志输出文件名字
+  std::string m_file_path;    // 日志输出路径
+  int m_max_file_size {0};    // 日志单个文件最大大小, 单位为字节
+
+  sem_t m_sempahore;
+
+  pthread_cond_t m_condtion;  // 条件变量
+  Mutex m_mutex;
+
+  std::string m_date;   // 当前打印日志的文件日期
+  FILE* m_file_hanlder {NULL};   // 当前打开的日志文件句柄
+
+  bool m_reopen_flag {false};
+
+  int m_no {0};   // 日志文件序号
+
+  bool m_stop_flag {false};
+
+};
 
     // 日志器
     // 1.提供打印日志的方法
     // 2.设置日志输出的路径
-    class Logger{
-      public:
-        // 定义了一个名为s_ptr的别名，
-        //用于表示指向Logger对象的std::shared_ptr类型的智能指针。
-        typedef std::shared_ptr<Logger> s_ptr;
-        //Logger(LogLevel level, int type = 1);
-        Logger(LogLevel level):m_set_level(level){}
-        // 打印日志时间的方法
-        void pushLog(const std::string& msg);
-        
-        //void pushAppLog(const std::string& msg);
+class Logger{
+ public:
+    // 定义了一个名为s_ptr的别名，
+    //用于表示指向Logger对象的std::shared_ptr类型的智能指针。
+  typedef std::shared_ptr<Logger> s_ptr;
+  Logger(LogLevel level, int type = 1);
+  // 打印日志时间的方法
+  void pushLog(const std::string& msg);
+  
+  void pushAppLog(const std::string& msg);
 
-        //void init();
-        // 打印日志
-        void log();
+  void init();
+  // 打印日志
+  void log();
 
-        LogLevel getLogLevel()const{
-          return m_set_level;
-        }
-        
+  LogLevel getLogLevel()const{
+    return m_set_level;
+  }
 
-      public:
-        // 获取全局Logger对象的实例
-        static Logger* GetGlobalLogger();
-        static void InitGlobalLogger();
-        //static void InitGlobalLogger(int type = 1);
+  AsyncLogger::s_ptr getAsyncAppLopger() {
+    return m_asnyc_app_logger;
+  }
 
-      private:
-        LogLevel m_set_level;
-        std::queue<std::string> m_buffer;
-        // 创建互斥锁对象
-        Mutex m_mutex;
-    };
+  AsyncLogger::s_ptr getAsyncLopger() {
+    return m_asnyc_logger;
+  }
+
+  void syncLoop();
+
+  void flush();
+
+public:
+  // 获取全局Logger对象的实例
+  static Logger* GetGlobalLogger();
+  static void InitGlobalLogger(int type = 1);
+
+private:
+  LogLevel m_set_level;
+  std::vector<std::string> m_buffer;
+  std::vector<std::string> m_app_buffer;
+  // 创建互斥锁对象
+  Mutex m_mutex;
+  Mutex m_app_mutex;
+  std::string m_file_name;    // 日志输出文件名字
+  std::string m_file_path;    // 日志输出路径
+  int m_max_file_size {0};    // 日志单个文件最大大小
+
+  AsyncLogger::s_ptr m_asnyc_logger;
+
+  AsyncLogger::s_ptr m_asnyc_app_logger;
+
+  TimerEvent::s_ptr m_timer_event;
+
+  int m_type {0};
+
+
+};
 
 
 
-    // 日志事件的类，规定日志包含什么以及格式
-    class LogEvent{
-     public:
-       // 构造函数
-       LogEvent(LogLevel level) : m_level(level) {}
-       // 获得文件名称
-       std::string getFilename() const{
-        return m_file_name;
-       }
-       LogLevel getLogLevel() const{
-        return m_level;
-       }
-       // 打印日志的函数
-       std::string toString();
-     
-     private:
-       std::string m_file_name; // 文件名
-       int32_t m_file_line; // 行号
-       int32_t m_pid; //进程号
-       int32_t m_thread_id; //线程号
+// 日志事件的类，规定日志包含什么以及格式
+class LogEvent{
+ public:
+  // 构造函数
+  LogEvent(LogLevel level) : m_level(level) {}
+  // 获得文件名称
+  std::string getFilename() const{
+  return m_file_name;
+  }
+  LogLevel getLogLevel() const{
+  return m_level;
+  }
+  // 打印日志的函数
+  std::string toString();
+  
+ private:
+  std::string m_file_name; // 文件名
+  int32_t m_file_line; // 行号
+  int32_t m_pid; //进程号
+  int32_t m_thread_id; //线程号
 
-       LogLevel m_level; // 日志级别
+  LogLevel m_level; // 日志级别
 
-    };
+};
+
 }
 
 #endif

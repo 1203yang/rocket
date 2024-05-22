@@ -19,14 +19,14 @@ TcpServer::~TcpServer() {
     delete m_main_event_loop;
     m_main_event_loop = NULL;
   }
-//   if (m_io_thread_group) {
-//     delete m_io_thread_group;
-//     m_io_thread_group = NULL; 
-//   }
-//   if (m_listen_fd_event) {
-//     delete m_listen_fd_event;
-//     m_listen_fd_event = NULL;
-//   }
+  if (m_io_thread_group) {
+    delete m_io_thread_group;
+    m_io_thread_group = NULL; 
+  }
+  if (m_listen_fd_event) {
+    delete m_listen_fd_event;
+    m_listen_fd_event = NULL;
+  }
 }
 
 
@@ -36,15 +36,15 @@ void TcpServer::init() {
     //  获取当前主循环 这个函数是静态的，只能主线程调用
   m_main_event_loop = EventLoop::GetCurrentEventLoop();
     //  创建IO线程组
-//   m_io_thread_group = new IOThreadGroup(Config::GetGlobalConfig()->m_io_threads);
-  m_io_thread_group = new IOThreadGroup(2);
+  m_io_thread_group = new IOThreadGroup(Config::GetGlobalConfig()->m_io_threads);
+  // m_io_thread_group = new IOThreadGroup(2);
   m_listen_fd_event = new FdEvent(m_acceptor->getListenFd());
   m_listen_fd_event->listen(FdEvent::IN_EVENT, std::bind(&TcpServer::onAccept, this));
   // 将监听的事件添加到主循环中
   m_main_event_loop->addEpollEvent(m_listen_fd_event);
 
-//   m_clear_client_timer_event = std::make_shared<TimerEvent>(5000, true, std::bind(&TcpServer::ClearClientTimerFunc, this));
-// 	m_main_event_loop->addTimerEvent(m_clear_client_timer_event);
+  m_clear_client_timer_event = std::make_shared<TimerEvent>(5000, true, std::bind(&TcpServer::ClearClientTimerFunc, this));
+	m_main_event_loop->addTimerEvent(m_clear_client_timer_event);
 
 }
 
@@ -74,21 +74,21 @@ void TcpServer::start() {
 }
 
 
-// void TcpServer::ClearClientTimerFunc() {
-//   auto it = m_client.begin();
-//   for (it = m_client.begin(); it != m_client.end(); ) {
-//     // TcpConnection::ptr s_conn = i.second;
-// 		// DebugLog << "state = " << s_conn->getState();
-//     if ((*it) != nullptr && (*it).use_count() > 0 && (*it)->getState() == Closed) {
-//       // need to delete TcpConnection
-//       DEBUGLOG("TcpConection [fd:%d] will delete, state=%d", (*it)->getFd(), (*it)->getState());
-//       it = m_client.erase(it);
-//     } else {
-//       it++;
-//     }
+void TcpServer::ClearClientTimerFunc() {
+  auto it = m_client.begin();
+  for (it = m_client.begin(); it != m_client.end(); ) {
+    // TcpConnection::ptr s_conn = i.second;
+		// DebugLog << "state = " << s_conn->getState();
+    if ((*it) != nullptr && (*it).use_count() > 0 && (*it)->getState() == Closed) {
+      // need to delete TcpConnection
+      DEBUGLOG("TcpConection [fd:%d] will delete, state=%d", (*it)->getFd(), (*it)->getState());
+      it = m_client.erase(it);
+    } else {
+      it++;
+    }
 	
-//   }
+  }
 
-// }
+}
 
 }

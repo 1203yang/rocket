@@ -54,9 +54,9 @@ class RpcController : public google::protobuf::RpcController {
 
   int GetTimeout();
 
-//   bool Finished();
+  bool Finished();
 
-//   void SetFinished(bool value);
+  void SetFinished(bool value);
  
  private:
   int32_t m_error_code {0}; // 错误码

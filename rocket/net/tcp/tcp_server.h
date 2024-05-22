@@ -27,7 +27,7 @@ class TcpServer {
   void onAccept();
 
 //   // 清除 closed 的连接
-//   void ClearClientTimerFunc();
+  void ClearClientTimerFunc();
 
 
  private:
@@ -47,7 +47,7 @@ class TcpServer {
 
   std::set<TcpConnection::s_ptr> m_client;
 
-//   TimerEvent::s_ptr m_clear_client_timer_event;
+  TimerEvent::s_ptr m_clear_client_timer_event;
 
 };
 

@@ -31,21 +31,21 @@ class OrderImpl : public Order {
                       const ::makeOrderRequest* request,
                       ::makeOrderResponse* response,
                       ::google::protobuf::Closure* done) {
-    // APPDEBUGLOG("start sleep 5s");
-    // sleep(5);
-    // APPDEBUGLOG("end sleep 5s");
+    APPDEBUGLOG("start sleep 5s");
+    sleep(5);
+    APPDEBUGLOG("end sleep 5s");
     if (request->price() < 10) {
       response->set_ret_code(-1);// 钱不够
       response->set_res_info("short balance");
       return;
     }// 下单id
     response->set_order_id("20230514");
-    // APPDEBUGLOG("call makeOrder success");
-    // if (done) {
-    //   done->Run();
-    //   delete done;
-    //   done = NULL;
-    // }
+    APPDEBUGLOG("call makeOrder success");
+    if (done) {
+      done->Run();
+      delete done;
+      done = NULL;
+    }
   }
 };
 void test_tcp_server(){
@@ -58,12 +58,12 @@ void test_tcp_server(){
 
 int main(int argc, char* argv[]) {
 
-//   if (argc != 2) {
-//     printf("Start test_rpc_server error, argc not 2 \n");
-//     printf("Start like this: \n");
-//     printf("./test_rpc_server ../conf/rocket.xml \n");
-//     return 0;
-//   }
+  if (argc != 2) {
+    printf("Start test_rpc_server error, argc not 2 \n");
+    printf("Start like this: \n");
+    printf("./test_rpc_server ../conf/rocket.xml \n");
+    return 0;
+  }
 
   rocket::Config::SetGlobalConfig("../conf/rocket.xml");
 
@@ -73,12 +73,10 @@ int main(int argc, char* argv[]) {
      // 启动之前注册好service
   rocket::RpcDispatcher::GetRpcDispatcher()->registerService(service);
 
-//   rocket::IPNetAddr::s_ptr addr = std::make_shared<rocket::IPNetAddr>("127.0.0.1", rocket::Config::GetGlobalConfig()->m_port);
-
-//   rocket::TcpServer tcp_server(addr);
-
-// tcp_server.start();
-  test_tcp_server();
+  rocket::IPNetAddr::s_ptr addr = std::make_shared<rocket::IPNetAddr>("127.0.0.1", rocket::Config::GetGlobalConfig()->m_port);
+  rocket::TcpServer tcp_server(addr);
+  tcp_server.start();
+  // test_tcp_server();
 
   return 0;
 }

@@ -14,7 +14,7 @@
 #include "rocket/net/tcp/net_addr.h"
 #include "rocket/net/coder/tinypb_Coder.h"
 #include "rocket/net/coder/tinypb_Protocol.h"
-
+#include "rocket/net/coder/string_coder.h"
 void test_connect() {
 
   // 调用 conenct 连接 server
@@ -34,15 +34,11 @@ void test_connect() {
   inet_aton("127.0.0.1", &server_addr.sin_addr);
   // 调用connect
   int rt = connect(fd, reinterpret_cast<sockaddr*>(&server_addr), sizeof(server_addr));
-
   DEBUGLOG("connect success");
-
   std::string msg = "hello rocket!";
   // 写
   rt = write(fd, msg.c_str(), msg.length());
-
   DEBUGLOG("success write %d bytes, [%s]", rt, msg.c_str());
-
   char buf[100];
   rt = read(fd, buf, 100);
   DEBUGLOG("success read %d bytes, [%s]", rt, std::string(buf).c_str());
@@ -67,41 +63,41 @@ void test_tcp_client() {
   //     DEBUGLOG("send message success");
   //   });
 
-  // // 测试发送和读取消息
-  //   client.connect([addr, &client]() {
-  //     DEBUGLOG("conenct to [%s] success", addr->toString().c_str());
-  //     std::shared_ptr<rocket::StringProtocol> message = std::make_shared<rocket::StringProtocol>();
-  //     message->info = "hello rocket";
-  //     message->setMsgId("123456" );
-  //     client.writeMessage(message, [](rocket::AbstractProtocol::s_ptr msg_ptr) {
-  //       DEBUGLOG("send message success");
-  //     });
+  // 测试发送和读取消息
+    client.connect([addr, &client]() {
+      DEBUGLOG("conenct to [%s] success", addr->toString().c_str());
+      std::shared_ptr<rocket::StringProtocol> message = std::make_shared<rocket::StringProtocol>();
+      message->info = "hello rocket";
+      message->m_msg_id="123456" ;
+      client.writeMessage(message, [](rocket::AbstractProtocol::s_ptr msg_ptr) {
+        DEBUGLOG("send message success");
+      });
 
-  //     client.readMessage("123456789", [](rocket::AbstractProtocol::s_ptr msg_ptr) {
-  //       std::shared_ptr<rocket::StringProtocol> message = std::dynamic_pointer_cast<rocket::StringProtocol>(msg_ptr);
-  //       DEBUGLOG("msg_id[%s], get response %s", message->getMsgId().c_str(), message->info.c_str());
-  //     });
+      client.readMessage("123456789", [](rocket::AbstractProtocol::s_ptr msg_ptr) {
+        std::shared_ptr<rocket::StringProtocol> message = std::dynamic_pointer_cast<rocket::StringProtocol>(msg_ptr);
+        DEBUGLOG("msg_id[%s], get response %s", message->m_msg_id, message->info.c_str());
+      });
 
-  //     client.writeMessage(message, [](rocket::AbstractProtocol::s_ptr msg_ptr) {
-  //       DEBUGLOG("send message 2222 success");
-  //     });
+      client.writeMessage(message, [](rocket::AbstractProtocol::s_ptr msg_ptr) {
+        DEBUGLOG("send message 2222 success");
+      });
 
-  // });
-  // 封装好rpc协议之后测试编码解码功能
-  client.connect([addr, &client]() {
-    DEBUGLOG("conenct to [%s] success", addr->toString().c_str());
-    std::shared_ptr<rocket::TinyPBProtocol> message = std::make_shared<rocket::TinyPBProtocol>();
-    message->m_msg_id = "123456789";
-    message->m_pb_data = "test pb data";
-    client.writeMessage(message, [](rocket::AbstractProtocol::s_ptr msg_ptr) {
-      DEBUGLOG("send message success");
-    });
-
-    client.readMessage("123456789", [](rocket::AbstractProtocol::s_ptr msg_ptr) {
-      std::shared_ptr<rocket::TinyPBProtocol> message = std::dynamic_pointer_cast<rocket::TinyPBProtocol>(msg_ptr);
-      DEBUGLOG("msg_id[%s], get response %s", message->m_msg_id.c_str(), message->m_pb_data.c_str());
-    });
   });
+  // 封装好rpc协议之后测试编码解码功能
+  // client.connect([addr, &client]() {
+  //   DEBUGLOG("conenct to [%s] success", addr->toString().c_str());
+  //   std::shared_ptr<rocket::TinyPBProtocol> message = std::make_shared<rocket::TinyPBProtocol>();
+  //   message->m_msg_id = "123456789";
+  //   message->m_pb_data = "test pb data";
+  //   client.writeMessage(message, [](rocket::AbstractProtocol::s_ptr msg_ptr) {
+  //     DEBUGLOG("send message success");
+  //   });
+
+  //   client.readMessage("123456789", [](rocket::AbstractProtocol::s_ptr msg_ptr) {
+  //     std::shared_ptr<rocket::TinyPBProtocol> message = std::dynamic_pointer_cast<rocket::TinyPBProtocol>(msg_ptr);
+  //     DEBUGLOG("msg_id[%s], get response %s", message->m_msg_id.c_str(), message->m_pb_data.c_str());
+  //   });
+  // });
 }
 
 int main() {

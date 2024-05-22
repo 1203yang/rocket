@@ -32,20 +32,20 @@ class TcpClient {
   // 异步的读取 message
   // 如果读取 message 成功，会调用 done 函数， 函数的入参就是 message 对象 
   void readMessage(const std::string& msg_id, std::function<void(AbstractProtocol::s_ptr)> done);
+  // 客户端不需要一直处在loop循环中
+  void stop();
 
-//   void stop();
+  int getConnectErrorCode();
 
-//   int getConnectErrorCode();
+  std::string getConnectErrorInfo();
 
-//   std::string getConnectErrorInfo();
+  NetAddr::s_ptr getPeerAddr();
 
-//   NetAddr::s_ptr getPeerAddr();
+  NetAddr::s_ptr getLocalAddr();
 
-//   NetAddr::s_ptr getLocalAddr();
+  void initLocalAddr();
 
-//   void initLocalAddr();
-
-//   void addTimerEvent(TimerEvent::s_ptr timer_event);
+  void addTimerEvent(TimerEvent::s_ptr timer_event);
 
 
  private:
@@ -60,8 +60,8 @@ class TcpClient {
   // 代表这次连接
   TcpConnection::s_ptr m_connection;
 
-//   int m_connect_error_code {0};
-//   std::string m_connect_error_info;
+  int m_connect_error_code {0};
+  std::string m_connect_error_info;
 
 };  
 }

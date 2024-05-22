@@ -165,7 +165,7 @@ void EventLoop::loop(){
     // 在指定的 epoll 实例上等待事件的发生，一旦有事件发生或超时，
     // 就将事件信息写入到 result_events 数组中，并返回发生的事件数量
     int rt = epoll_wait(m_epoll_fd, result_events, g_epoll_max_events, timeout);
-    //DEBUGLOG("now end epoll_wait, rt = %d", rt);
+    // DEBUGLOG("now end epoll_wait, rt = %d", rt);
     if (rt < 0) {
       ERRORLOG("epoll_wait error, errno=%d, error=%s", errno, strerror(errno));
     } else {
@@ -177,11 +177,11 @@ void EventLoop::loop(){
           continue;
         }
         if (trigger_event.events & EPOLLIN) { 
-          //DEBUGLOG("fd %d trigger EPOLLIN event", fd_event->getFd())
+          // DEBUGLOG("fd %d trigger EPOLLIN event", fd_event->getFd())
           addTask(fd_event->handler(FdEvent::IN_EVENT));
         }
         if (trigger_event.events & EPOLLOUT) { 
-          //DEBUGLOG("fd %d trigger EPOLLOUT event", fd_event->getFd())
+          // DEBUGLOG("fd %d trigger EPOLLOUT event", fd_event->getFd())
           addTask(fd_event->handler(FdEvent::OUT_EVENT));
         }
 

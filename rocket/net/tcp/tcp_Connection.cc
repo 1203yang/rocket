@@ -92,8 +92,7 @@ void TcpConnection::excute() {
   if (m_connection_type == TcpConnectionByServer) {
     // 将 RPC 请求执行业务逻辑，获取 RPC 响应, 再把 RPC 响应发送回去
     std::vector<AbstractProtocol::s_ptr> result;
-    std::vector<AbstractProtocol::s_ptr> replay_messages;
-    // m_coder->decode(result, m_in_buffer);
+    m_coder->decode(result, m_in_buffer);
     for (size_t i = 0;  i < result.size(); ++i) {
       // 1. 针对每一个请求，调用 rpc 方法，获取响应 message
       // 2. 将响应 message 放入到发送缓冲区，监听可写事件回包
@@ -104,16 +103,9 @@ void TcpConnection::excute() {
       // message->m_pb_data = "hello. this is rocket rpc test data";
       // message->m_msg_id = result[i]->m_msg_id;
       
-      RpcDispatcher::GetRpcDispatcher()->dispatch(result[i],message,this);
-      replay_messages.emplace_back(message);
-      
-
-      // RpcDispatcher::GetRpcDispatcher()->dispatch(result[i], message, this);
-    }
-    m_coder->encode(result, m_out_buffer);
-    listenWrite();
-
-  } else {
+      RpcDispatcher::GetRpcDispatcher()->dispatch(result[i], message, this);
+    } 
+    } else {
     // 从 buffer 里 decode 得到 message 对象, 执行其回调
     std::vector<AbstractProtocol::s_ptr> result;
     m_coder->decode(result, m_in_buffer);
@@ -123,7 +115,7 @@ void TcpConnection::excute() {
       auto it = m_read_dones.find(msg_id);
       if (it != m_read_dones.end()) {
         it->second(result[i]);
-        // m_read_dones.erase(it);
+        m_read_dones.erase(it);
       }
     }
 
@@ -132,10 +124,10 @@ void TcpConnection::excute() {
 }
 
 
-// void TcpConnection::reply(std::vector<AbstractProtocol::s_ptr>& replay_messages) {
-//   m_coder->encode(replay_messages, m_out_buffer);
-//   listenWrite();
-// }
+void TcpConnection::reply(std::vector<AbstractProtocol::s_ptr>& replay_messages) {
+  m_coder->encode(replay_messages, m_out_buffer);
+  listenWrite();
+}
 // 写入
 void TcpConnection::onWrite() {
   // 将当前 out_buffer 里面的数据全部发送给 client
@@ -273,8 +265,8 @@ NetAddr::s_ptr TcpConnection::getPeerAddr() {
 }
 
 
-// int TcpConnection::getFd() {
-//   return m_fd;
-// }
+int TcpConnection::getFd() {
+  return m_fd;
+}
 
 }

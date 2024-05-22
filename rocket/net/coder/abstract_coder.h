@@ -15,7 +15,6 @@ class AbstractCoder {
   virtual void encode(std::vector<AbstractProtocol::s_ptr>& messages, TcpBuffer::s_ptr out_buffer) = 0;
 
   // 将 buffer 里面的字节流转换为 message 对象
-  // virtual void decode(std::vector<AbstractProtocol::s_ptr>& out_messages, TcpBuffer::s_ptr buffer) = 0;
   virtual void decode(std::vector<AbstractProtocol::s_ptr>& out_messages, TcpBuffer::s_ptr buffer) = 0;
 
   virtual ~AbstractCoder() {}

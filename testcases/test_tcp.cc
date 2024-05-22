@@ -24,7 +24,6 @@ int main() {
 //   DEBUGLOG("create addr %s",addr.toString().c_str());
 
 //   rocket::Config::SetGlobalConfig(NULL);
-
 //   rocket::Logger::InitGlobalLogger(0);
 
   test_tcp_server();

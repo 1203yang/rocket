@@ -7,10 +7,10 @@
 #include "rocket/common/log.h"
 #include "rocket/common/error_code.h"
 #include "rocket/net/rpc/rpc_controller.h"
-// #include "rocket/net/rpc/rpc_closure.h"
+#include "rocket/net/rpc/rpc_closure.h"
 #include "rocket/net/tcp/net_addr.h"
 #include "rocket/net/tcp/tcp_Connection.h"
-// #include "rocket/common/run_time.h"
+#include "rocket/common/run_Time.h"
 
 namespace rocket{
 
@@ -81,48 +81,33 @@ void RpcDispatcher::dispatch(AbstractProtocol::s_ptr request, AbstractProtocol::
   // 获得响应对应的函数名
   google::protobuf::Message* rsp_msg = service->GetResponsePrototype(method).New();
   // 配置rpc的配置
-  RpcController rpc_controller;
-  rpc_controller.SetLocalAddr(connection->getLocalAddr());
-  rpc_controller.SetPeerAddr(connection->getPeerAddr());
-  rpc_controller.SetMsgId(req_protocol->m_msg_id);
-  // RpcController* rpc_controller = new RpcController();
-  // rpc_controller->SetLocalAddr(connection->getLocalAddr());
-  // rpc_controller->SetPeerAddr(connection->getPeerAddr());
-  // rpc_controller->SetMsgId(req_protocol->m_msg_id);
 
-    // 获得回应函数
-    service->CallMethod(method,&rpc_controller,req_msg,rsp_msg,NULL);
+  RpcController* rpc_controller = new RpcController();
+  rpc_controller->SetLocalAddr(connection->getLocalAddr());
+  rpc_controller->SetPeerAddr(connection->getPeerAddr());
+  rpc_controller->SetMsgId(req_protocol->m_msg_id);
+
+
+  RunTime::GetRunTime()->m_msgid = req_protocol->m_msg_id;
+  RunTime::GetRunTime()->m_method_name = method_name;
+  // 反序列化失败
+  RpcClosure* closure = new RpcClosure(nullptr, [req_msg, rsp_msg, req_protocol, rsp_protocol, connection, rpc_controller, this]() mutable {
     if (!rsp_msg->SerializeToString(&(rsp_protocol->m_pb_data))) {
       ERRORLOG("%s | serilize error, origin message [%s]", req_protocol->m_msg_id.c_str(), rsp_msg->ShortDebugString().c_str());
       setTinyPBError(rsp_protocol, ERROR_FAILED_SERIALIZE, "serilize error");
-      DELETE_RESOURCE(rsp_msg);
-      DELETE_RESOURCE(req_msg);
     } else {
       rsp_protocol->m_err_code = 0;
       rsp_protocol->m_err_info = "";
       INFOLOG("%s | dispatch success, requesut[%s], response[%s]", req_protocol->m_msg_id.c_str(), req_msg->ShortDebugString().c_str(), rsp_msg->ShortDebugString().c_str());
     }
 
-//   RunTime::GetRunTime()->m_msgid = req_protocol->m_msg_id;
-//   RunTime::GetRunTime()->m_method_name = method_name;
-//   // 反序列化失败
-//   RpcClosure* closure = new RpcClosure(nullptr, [req_msg, rsp_msg, req_protocol, rsp_protocol, connection, rpc_controller, this]() mutable {
-//     if (!rsp_msg->SerializeToString(&(rsp_protocol->m_pb_data))) {
-//       ERRORLOG("%s | serilize error, origin message [%s]", req_protocol->m_msg_id.c_str(), rsp_msg->ShortDebugString().c_str());
-//       setTinyPBError(rsp_protocol, ERROR_FAILED_SERIALIZE, "serilize error");
-//     } else {
-//       rsp_protocol->m_err_code = 0;
-//       rsp_protocol->m_err_info = "";
-//       INFOLOG("%s | dispatch success, requesut[%s], response[%s]", req_protocol->m_msg_id.c_str(), req_msg->ShortDebugString().c_str(), rsp_msg->ShortDebugString().c_str());
-//     }
+    std::vector<AbstractProtocol::s_ptr> replay_messages;
+    replay_messages.emplace_back(rsp_protocol);
+    connection->reply(replay_messages);
 
-//     std::vector<AbstractProtocol::s_ptr> replay_messages;
-//     replay_messages.emplace_back(rsp_protocol);
-//     connection->reply(replay_messages);
-
-//   });
-//   // 获得回应函数
-//   service->CallMethod(method, rpc_controller, req_msg, rsp_msg, closure);
+  });
+  // 获得回应函数
+  service->CallMethod(method, rpc_controller, req_msg, rsp_msg, closure);
   
 }
 

@@ -47,7 +47,7 @@ class TcpConnection {
   // 清楚连接
   void clear();
 
-  // int getFd();
+  int getFd();
 
   // 服务器主动关闭连接
   // 关闭占用资源的无效连接
@@ -69,7 +69,7 @@ class TcpConnection {
 
   NetAddr::s_ptr getPeerAddr();
 
-  // void reply(std::vector<AbstractProtocol::s_ptr>& replay_messages);
+  void reply(std::vector<AbstractProtocol::s_ptr>& replay_messages);
 
  private:
 

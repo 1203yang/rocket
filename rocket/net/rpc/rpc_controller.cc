@@ -25,8 +25,8 @@ std::string RpcController::ErrorText() const {
 // 取消
 void RpcController::StartCancel() {
   m_is_cancled = true;
-//   m_is_failed = true;
-//   SetFinished(true);
+  m_is_failed = true;
+  SetFinished(true);
 }
 // 设置失败信息
 void RpcController::SetFailed(const std::string& reason) {
@@ -89,12 +89,12 @@ int RpcController::GetTimeout() {
   return m_timeout;
 }
 
-// bool RpcController::Finished() {
-//   return m_is_finished;
-// }
+bool RpcController::Finished() {
+  return m_is_finished;
+}
 
-// void RpcController::SetFinished(bool value) {
-//   m_is_finished = value;
-// }
+void RpcController::SetFinished(bool value) {
+  m_is_finished = value;
+}
 
 }
